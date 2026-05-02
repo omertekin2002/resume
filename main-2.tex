@@ -1,0 +1,196 @@
+%-------------------------
+% Resume in Latex
+% Author : Jake Gutierrez
+% Based off of: https://github.com/sb2nov/resume
+% License : MIT
+%------------------------
+
+\documentclass[letterpaper,11pt]{article}
+
+\usepackage{latexsym}
+\usepackage[empty]{fullpage}
+\usepackage{titlesec}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{verbatim}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{fancyhdr}
+\usepackage[english]{babel}
+\usepackage{tabularx}
+\input{glyphtounicode}
+
+
+%----------FONT OPTIONS----------
+% sans-serif
+% \usepackage[sfdefault]{FiraSans}
+% \usepackage[sfdefault]{roboto}
+% \usepackage[sfdefault]{noto-sans}
+% \usepackage[default]{sourcesanspro}
+
+% serif
+% \usepackage{CormorantGaramond}
+% \usepackage{charter}
+
+
+\pagestyle{fancy}
+\fancyhf{} % clear all header and footer fields
+\fancyfoot{} 
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+
+% Adjust margins
+\addtolength{\oddsidemargin}{-0.5in}
+\addtolength{\evensidemargin}{-0.5in}
+\addtolength{\textwidth}{1in}
+\addtolength{\topmargin}{-.7in}
+\addtolength{\textheight}{1.4in}
+
+\urlstyle{same}
+
+\raggedbottom
+\raggedright
+\setlength{\tabcolsep}{0in}
+
+% Sections formatting
+\titleformat{\section}{\vspace{-4pt}\scshape\raggedright\large}{}{0em}{}[\color{black}\titlerule \vspace{-6pt}]
+
+% Ensure that generate pdf is machine readable/ATS parsable
+\pdfgentounicode=1
+
+%-------------------------
+% Custom commands
+\newcommand{\resumeItem}[1]{\item\small{{
+    {#1 \vspace{-2pt}}
+  }}}
+
+\newcommand{\resumeSubheading}[4]{\vspace{-2pt}\item
+    \begin{tabular*}{0.97\textwidth}[t]{l@{\extracolsep{\fill}}r}
+      \textbf{#1} & #2 \\[-3pt]
+      \textit{\small#3} & \textit{\small #4} \\
+    \end{tabular*} \vspace{-2.5pt}
+}
+
+\newcommand{\resumeSubSubheading}[2]{\item
+    \begin{tabular*}{0.97\textwidth}{l@{\extracolsep{\fill}}r}
+      \textit{\small#1} & \textit{\small #2} \\
+    \end{tabular*} \vspace{-3pt}
+}
+
+\newcommand{\resumeProjectHeading}[2]{\item
+    \begin{tabular*}{0.97\textwidth}{l@{\extracolsep{\fill}}r}
+      \small#1 & #2 \\
+    \end{tabular*} \vspace{-7pt}
+}
+
+\newcommand{\resumeSubItem}[1]{\resumeItem{#1}\vspace{-6pt}}
+
+\renewcommand\labelitemii{\vcenter{\hbox{\tiny$\bullet$}}}
+
+\newcommand{\resumeSubHeadingListStart}{\begin{itemize}[leftmargin=0.15in, label={}, itemsep=0pt, parsep=0pt]}
+\newcommand{\resumeSubHeadingListEnd}{\end{itemize}\vspace{-25pt}}
+\newcommand{\resumeItemListStart}{\begin{itemize}[parsep=0pt]}
+\newcommand{\resumeItemListEnd}{\end{itemize}\vspace{-27pt}}
+
+%-------------------------------------------
+%%%%%%  RESUME STARTS HERE  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\begin{document}
+
+%----------HEADING----------
+\begin{center}
+    \textbf{\Huge \scshape Ömer Tekin} \\ \vspace{1pt}
+    \small +90 538 369 05 21 $|$ \href{mailto:omertekin2002@hotmail.com}{\underline{omertekin2002@hotmail.com}} $|$ 
+    \href{https://omertekin2002.github.io}{\underline{omertekin2002.github.io}}
+\end{center}
+
+
+%-----------EDUCATION-----------
+\section{Education}
+  \resumeSubHeadingListStart
+    \resumeSubheading
+      {Koç University}{Rumelifeneri, Sarıyer, İstanbul, Türkiye}
+      {Bachelor of Laws (LLB) | DM in Business Administration (BBA)}{2022-Present}
+    \resumeSubheading
+      {High School}{İstanbul, Türkiye}
+      {IGCSE – 6 A-grade GCSEs taken. + National Diploma}{}
+  \resumeSubHeadingListEnd
+
+
+%-----------EXPERIENCE-----------
+\section{Employment \& Experience}
+  \resumeSubHeadingListStart
+    \resumeSubheading
+      {Frankfurt Investment Arbitration Moot Court}{Frankfurt, Hessen, Germany}
+      {Participant, on behalf of Koç University Maritime Forum [KÜDENFOR]}{February 2026 – June 2026}
+    \resumeSubheading
+      {Çakmak Attorney Partnership}{Istanbul, Türkiye}
+      {Summer Intern}{September 2025}
+    \resumeSubheading
+      {Bezen Attorney Partnership}{Istanbul, Türkiye}
+      {Summer Intern, Corporate and Banking \& Finance}{August 2025}
+    \resumeSubheading
+      {Ak\&Daniş Attorney Partnership}{Istanbul, Türkiye}
+      {Intern, In association with Alliott Global Alliance}{January 2025}
+    \resumeSubheading
+      {Frankfurt Investment Arbitration Moot Court}{Frankfurt, Hessen, Germany}
+      {Participant, on behalf of Koç University Maritime Forum [KÜDENFOR]}{September 2024 – June 2025}
+    \resumeSubheading
+      {DNPartners}{Istanbul, Türkiye}
+      {Intern, DNPartners Law Firm}{October 2024 – November 2024}
+    \resumeSubheading
+      {Koç University}{Istanbul, Türkiye}
+      {Tutor, Koç University Office of Teaching and Learning, Python}{October 2023 – January 2024}
+  \resumeSubHeadingListEnd
+
+%-----------AREAS OF INTEREST-----------
+\section{Areas of Interest}
+\resumeItemListStart
+    \resumeItem{Corporate Law, Finance, M\&A, Competition Law, ADR and Arbitration, Operations, FDI, ICSID Arbitration, Securities and Capital Markets Law, International Swaps and Derivatives Association}
+    \resumeItem{Legal AI, check my legal analysis project at \href{https://signloop.vercel.app}{\underline{signloop.vercel.app}}}
+\resumeItemListEnd
+%-----------CERTIFICATIONS-----------
+\section{Certifications}
+\resumeItemListStart
+    \resumeItem{Sermaye Piyasası Faaliyetleri Düzey 3 + Türev Araçlar Lisansı, Sermaye Piyasası Lisanslama Sicil ve Eğitim Kuruluşu A.Ş.}
+    \resumeItem{Microsoft Power BI Data Analyst (PL-300)}
+    \resumeItem{IELTS - ACADEMIC: 8.0/9.0 [Taken March 2025]}
+    \resumeItem{KUEPE [Koç University English Proficiency Exam]: 93/100}
+    \resumeItem{YÖKDİL (Social Sciences): 95/100}
+    \resumeItem{YKS (EA/SÖZ/DİL) RANKINGS: 111/231/519}
+\resumeItemListEnd
+
+%-----------AWARDS-----------
+\section{Awards}
+\resumeItemListStart
+    \resumeItem{2025 Vehbi Koç Honors}
+    \resumeItem{2023-2024 FinansGenç Project – Group Leader - Winners}
+    \resumeItem{2020 Mümtaz Turhan Sosyal Bilimler Lisesi Model United Nations - UNHCR - Best Delegate}
+    \resumeItem{2019 İstanbul Science Olympiads – Summer School}
+    \resumeItem{2018 Junior Balkan Mathematics Competition, National Team Substitute}
+    \resumeItem{2018 TÜBİTAK National Science Olympiads, Silver Medal}
+    \resumeItem{2017 Urfodu International Mathematics Competition, Prague/Czechia – Golden Medal}
+    \resumeItem{2016 Urfodu International Mathematics Competition, Moscow/Russia – Silver Medal}
+    \resumeItem{2016 AMC 8 Mathematics Competition - Distinguished Honours}
+\resumeItemListEnd
+
+%-----------PROGRAMMING SKILLS-----------
+\section{Skills \& Abilities}
+ \begin{itemize}[leftmargin=0.15in, label={}]
+    \small{\item{
+     \textbf{Languages}{: Turkish (Native), English (Fluent)} \\
+     \textbf{Other Skills}{: Microsoft Power BI, Excel, SPSS, MCP Integration, Office Suite, UYAP, Python}
+    }}
+ \end{itemize}\vspace{-27pt}
+
+%-----------SCHOLARSHIPS-----------
+\section{Scholarships}
+\resumeItemListStart
+    \resumeItem{Koç University, Enrollment Educational Scholarship}
+    \resumeItem{Koç University, Support Scholarship Program}
+    \resumeItem{Kartal Education Foundation, Bachelors Achievement Scholarship}
+    \resumeItem{FinansGenç, Achievement Scholarship}
+\resumeItemListEnd
+
+%-------------------------------------------
+\end{document}
