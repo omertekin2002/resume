@@ -31,8 +31,10 @@ jobs:
 
       - name: Prepare Pages artifact
         run: |
-          mkdir -p _site
+          mkdir -p _site/assets
           cp main-2.pdf _site/resume.pdf
+          cp favicon.ico favicon.svg _site/
+          cp assets/apple-touch-icon.png _site/assets/
           cat > _site/index.html << 'EOF'
           <!DOCTYPE html>
           <html lang="en">
@@ -40,6 +42,9 @@ jobs:
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Ömer Tekin – Resume</title>
+            <link rel="icon" href="favicon.ico?v=1" sizes="any">
+            <link rel="icon" type="image/svg+xml" href="favicon.svg?v=1">
+            <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png?v=1">
             <style>
               * { margin: 0; padding: 0; box-sizing: border-box; }
               body {
