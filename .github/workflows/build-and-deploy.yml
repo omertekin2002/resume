@@ -9,9 +9,9 @@ on:
 permissions:
   contents: read
 
-# Runs for the same ref (e.g. main) go one at a time, in order, so an older
-# build can never deploy after a newer one. PR builds only queue behind their
-# own PR, never behind main.
+# Allow one running workflow per ref without canceling the active run.
+# Pending runs can be replaced, and commit order is not guaranteed.
+# Each PR has its own group, separate from main.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
@@ -114,6 +114,7 @@ jobs:
     if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     permissions:
+      contents: read
       pages: write
       id-token: write
     environment:
@@ -126,6 +127,20 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
+      - name: Check main head before deployment
+        id: main-head
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          main_sha=$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/main" --jq '.object.sha')
+          if [ "$GITHUB_SHA" = "$main_sha" ]; then
+            echo "current=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "current=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping deployment of stale commit $GITHUB_SHA; main is at $main_sha"
+          fi
+
       - name: Deploy to GitHub Pages
         id: deployment
+        if: steps.main-head.outputs.current == 'true'
         uses: actions/deploy-pages@v4
