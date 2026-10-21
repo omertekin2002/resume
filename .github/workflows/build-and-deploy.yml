@@ -3,23 +3,24 @@ name: Build LaTeX and Deploy to Pages
 on:
   push:
     branches: [main]
+  pull_request:
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
+# Allow one running workflow per ref without canceling the active run.
+# Pending runs can be replaced, and commit order is not guaranteed.
+# Each PR has its own group, separate from main.
 concurrency:
-  group: "pages"
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+    permissions:
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -29,10 +30,17 @@ jobs:
         with:
           root_file: main.tex
 
+      - name: Check compiled PDF
+        run: |
+          if [ ! -s main.pdf ]; then
+            echo "::error file=main.tex::main.pdf was not produced or is empty"
+            exit 1
+          fi
+
       - name: Prepare Pages artifact
         run: |
           mkdir -p _site/assets
-          cp main-2.pdf _site/resume.pdf
+          cp main.pdf _site/resume.pdf
           cp favicon.ico favicon.svg _site/
           cp assets/apple-touch-icon.png _site/assets/
           cat > _site/index.html << 'EOF'
@@ -89,14 +97,50 @@ jobs:
           </html>
           EOF
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
+      - name: Upload résumé PDF
+        uses: actions/upload-artifact@v4
+        with:
+          name: resume-pdf
+          path: _site/resume.pdf
+          if-no-files-found: error
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: _site
 
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: "pages"
+      cancel-in-progress: false
+    steps:
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Check main head before deployment
+        id: main-head
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          main_sha=$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/main" --jq '.object.sha')
+          if [ "$GITHUB_SHA" = "$main_sha" ]; then
+            echo "current=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "current=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping deployment of stale commit $GITHUB_SHA; main is at $main_sha"
+          fi
+
       - name: Deploy to GitHub Pages
         id: deployment
+        if: steps.main-head.outputs.current == 'true'
         uses: actions/deploy-pages@v4
