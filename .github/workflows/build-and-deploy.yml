@@ -9,6 +9,13 @@ on:
 permissions:
   contents: read
 
+# Runs for the same ref (e.g. main) go one at a time, in order, so an older
+# build can never deploy after a newer one. PR builds only queue behind their
+# own PR, never behind main.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: ubuntu-latest
