@@ -37,6 +37,19 @@ jobs:
             exit 1
           fi
 
+      - name: Install PDF tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends poppler-utils
+
+      - name: Check page budget and text extraction
+        run: bash scripts/check-pdf.sh main.pdf main.tex
+
+      - name: Test the PDF checker
+        run: |
+          shellcheck scripts/*.sh
+          bash scripts/test-check-pdf.sh main.pdf main.tex
+
       - name: Prepare Pages artifact
         run: |
           mkdir -p _site/assets
