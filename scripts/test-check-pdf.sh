@@ -5,7 +5,7 @@
 #   pdf  a known-good one-page résumé PDF (default: main.pdf)
 #   tex  its LaTeX source (default: main.tex)
 #
-# Requires poppler-utils (pdfinfo, pdftotext, pdfunite).
+# Requires poppler-utils (pdfinfo, pdftotext).
 
 set -euo pipefail
 export LC_ALL=C.UTF-8
@@ -40,11 +40,13 @@ expect() {
   failed=$((failed + 1))
 }
 
-# make_pdf <out> <content stream>
-# Writes a one-page PDF whose Helvetica text maps byte 0x41 ("A") to U+FFFD
-# through its ToUnicode CMap, so "A" extracts as a replacement character.
+# make_pdf <out> <content stream> [info dictionary] [pages]
+# Writes a PDF (one page by default; every page shows the same content) whose
+# Helvetica text maps byte 0x41 ("A") to U+FFFD through its ToUnicode CMap, so
+# "A" extracts as a replacement character. Without an info dictionary the PDF
+# has no Title or Author metadata.
 make_pdf() {
-  local out=$1 content=$2
+  local out=$1 content=$2 info=${3:-} pages=${4:-1}
   local cmap='/CIDInit /ProcSet findresource begin
 12 dict begin
 begincmap
@@ -60,10 +62,16 @@ endcmap
 CMapName currentdict /CMap defineresource pop
 end
 end'
+  local page='<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>'
+  # Page 1 is object 3; further pages follow the fixed objects, from 7 on.
+  local kids='3 0 R' n
+  for ((n = 7; n < pages + 6; n++)); do
+    kids+=" $n 0 R"
+  done
   local objs=(
     '<< /Type /Catalog /Pages 2 0 R >>'
-    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>'
-    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>'
+    "<< /Type /Pages /Kids [$kids] /Count $pages >>"
+    "$page"
     '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /ToUnicode 6 0 R >>'
     "<< /Length ${#content} >>
 stream
@@ -74,6 +82,14 @@ stream
 $cmap
 endstream"
   )
+  for ((n = 1; n < pages; n++)); do
+    objs+=("$page")
+  done
+  local trailer_info=""
+  if [ -n "$info" ]; then
+    objs+=("$info")
+    trailer_info=" /Info ${#objs[@]} 0 R"
+  fi
   local body offsets=() i
   body=$'%PDF-1.4\n'
   for i in "${!objs[@]}"; do
@@ -90,7 +106,7 @@ endobj
     body+=$(printf '%010d 00000 n ' "$i")$'\n'
   done
   body+="trailer
-<< /Size $((${#objs[@]} + 1)) /Root 1 0 R >>
+<< /Size $((${#objs[@]} + 1)) /Root 1 0 R$trailer_info >>
 startxref
 $xref
 %%EOF
@@ -98,9 +114,13 @@ $xref
   printf '%s' "$body" > "$out"
 }
 
-pdfunite "$pdf" "$pdf" "$tmp/two-pages.pdf"
-make_pdf "$tmp/replacement-char.pdf" 'BT /F1 24 Tf 72 700 Td (Education A) Tj ET'
-make_pdf "$tmp/no-text.pdf" ''
+metadata='<< /Title (Test) /Author (Test) >>'
+make_pdf "$tmp/two-pages.pdf" 'BT /F1 24 Tf 72 700 Td (Test Education) Tj ET' "$metadata" 2
+make_pdf "$tmp/replacement-char.pdf" 'BT /F1 24 Tf 72 700 Td (Test Education A) Tj ET' "$metadata"
+make_pdf "$tmp/no-text.pdf" '' "$metadata"
+make_pdf "$tmp/no-metadata.pdf" 'BT /F1 24 Tf 72 700 Td (Test Education) Tj ET'
+make_pdf "$tmp/empty-title.pdf" 'BT /F1 24 Tf 72 700 Td (Test Education) Tj ET' '<< /Title ( ) /Author (Test) >>'
+make_pdf "$tmp/author-not-on-page.pdf" 'BT /F1 24 Tf 72 700 Td (Test Education) Tj ET' '<< /Title (Test) /Author (Someone Else) >>'
 
 printf '\\section{Education}\n' > "$tmp/education.tex"
 printf '\\documentclass{article}\n\\begin{document}\nNo sections.\n\\end{document}\n' > "$tmp/no-sections.tex"
@@ -110,9 +130,9 @@ printf '\\documentclass{article}\n\\begin{document}\nNo sections.\n\\end{documen
 expect "good PDF passes" 0 "1 page(s) (budget 1)" -- \
   "$checker" "$pdf" "$tex"
 expect "two pages exceed the default budget" 1 "has 2 pages; the page budget allows 1" -- \
-  "$checker" "$tmp/two-pages.pdf" "$tex"
+  "$checker" "$tmp/two-pages.pdf" "$tmp/education.tex"
 expect "MAX_PAGES=2 allows two pages" 0 "2 page(s) (budget 2)" -- \
-  env MAX_PAGES=2 "$checker" "$tmp/two-pages.pdf" "$tex"
+  env MAX_PAGES=2 "$checker" "$tmp/two-pages.pdf" "$tmp/education.tex"
 expect "invalid MAX_PAGES is rejected" 2 "MAX_PAGES must be a positive integer" -- \
   env MAX_PAGES=0 "$checker" "$pdf" "$tex"
 expect "missing section heading fails" 1 "section heading 'Heading That Is Not In The PDF'" -- \
@@ -125,6 +145,18 @@ expect "U+FFFD is the synthetic PDF's only problem" 1 "PDF check failed: 1 probl
   "$checker" "$tmp/replacement-char.pdf" "$tmp/education.tex"
 expect "PDF without text fails" 1 "pdftotext extracted no text" -- \
   "$checker" "$tmp/no-text.pdf" "$tmp/education.tex"
+expect "PDF without a Title fails" 1 "has no Title in its metadata" -- \
+  "$checker" "$tmp/no-metadata.pdf" "$tmp/education.tex"
+expect "PDF without an Author fails" 1 "has no Author in its metadata" -- \
+  "$checker" "$tmp/no-metadata.pdf" "$tmp/education.tex"
+expect "missing Title and Author are the synthetic PDF's only problems" 1 "PDF check failed: 2 problem(s)" -- \
+  "$checker" "$tmp/no-metadata.pdf" "$tmp/education.tex"
+expect "blank Title fails on its own" 1 "has no Title in its metadata" -- \
+  "$checker" "$tmp/empty-title.pdf" "$tmp/education.tex"
+expect "blank Title is the synthetic PDF's only problem" 1 "PDF check failed: 1 problem(s)" -- \
+  "$checker" "$tmp/empty-title.pdf" "$tmp/education.tex"
+expect "Author missing from the page fails" 1 "PDF author 'Someone Else' does not appear" -- \
+  "$checker" "$tmp/author-not-on-page.pdf" "$tmp/education.tex"
 expect "source without headings fails" 1 "found no \\section headings" -- \
   "$checker" "$pdf" "$tmp/no-sections.tex"
 expect "missing PDF is a usage error" 2 "cannot read" -- \

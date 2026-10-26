@@ -5,6 +5,8 @@
 #
 # Fails (exit 1) when:
 #   - the PDF has more pages than MAX_PAGES (default 1);
+#   - the PDF's Title or Author metadata is empty, or the Author does not
+#     appear in the extracted text;
 #   - pdftotext extracts no text, or text containing U+FFFD replacement
 #     characters;
 #   - any \section{...} heading from the .tex source is missing from the
@@ -55,7 +57,7 @@ fail() {
 }
 
 # --- Page budget -----------------------------------------------------------
-if ! info=$(pdfinfo "$pdf" 2>&1); then
+if ! info=$(pdfinfo -enc UTF-8 "$pdf" 2>&1); then
   echo "::error file=$pdf::pdfinfo could not read $pdf: $info"
   exit 1
 fi
@@ -66,6 +68,20 @@ if ! [[ "$pages" =~ ^[0-9]+$ ]]; then
 fi
 if [ "$pages" -gt "$max_pages" ]; then
   fail "$tex" "$pdf has $pages pages; the page budget allows $max_pages (set MAX_PAGES to change it)"
+fi
+
+# --- Metadata --------------------------------------------------------------
+# Print the value of a pdfinfo field, without surrounding whitespace.
+info_field() {
+  printf '%s\n' "$info" | sed -n "s/^$1:[[:space:]]*//p" | sed 's/[[:space:]]*$//'
+}
+title=$(info_field Title)
+author=$(info_field Author)
+if [ -z "$title" ]; then
+  fail "$tex" "$pdf has no Title in its metadata (set pdftitle in \\hypersetup)"
+fi
+if [ -z "$author" ]; then
+  fail "$tex" "$pdf has no Author in its metadata (set pdfauthor in \\hypersetup)"
 fi
 
 # --- Text extraction -------------------------------------------------------
@@ -83,8 +99,13 @@ if [ "$replacements" -gt 0 ]; then
   fail "$tex" "text extracted from $pdf contains $replacements U+FFFD replacement character(s); some glyphs have no Unicode mapping"
 fi
 
-# Collapse whitespace (headings may wrap) and expand common ligatures.
-flat=$(printf '%s' "$text" | sed 's/ﬁ/fi/g; s/ﬂ/fl/g; s/ﬀ/ff/g' | tr -s '[:space:]' ' ')
+# Compose accents into single characters (pdfTeX can extract "Ö" as "O" plus
+# a combining diaeresis), collapse whitespace (headings may wrap) and expand
+# common ligatures.
+nfc() {
+  perl -CSD -MUnicode::Normalize -pe '$_ = NFC($_)'
+}
+flat=$(printf '%s' "$text" | nfc | sed 's/ﬁ/fi/g; s/ﬂ/fl/g; s/ﬀ/ff/g' | tr -s '[:space:]' ' ')
 
 # Print each \section{...} / \section*{...} heading of the source, one per
 # line, as it should read in the PDF: comments dropped, common LaTeX escapes
@@ -115,6 +136,15 @@ done < <(read_headings "$tex")
 if [ "${#headings[@]}" -eq 0 ]; then
   fail "$tex" "found no \\section headings in $tex to look for in the PDF"
 fi
+# The Author metadata should name the person on the page, so it cannot drift
+# from the name printed in the résumé.
+if [ -n "$author" ]; then
+  flat_author=$(printf '%s' "$author" | nfc | tr -s '[:space:]' ' ')
+  if ! grep -qiF -- "$flat_author" <<< "$flat"; then
+    fail "$tex" "PDF author '$author' does not appear in the text extracted from $pdf"
+  fi
+fi
+
 for heading in "${headings[@]}"; do
   if ! grep -qiF -- "$heading" <<< "$flat"; then
     fail "$tex" "section heading '$heading' from $tex is missing from the text extracted from $pdf"
@@ -126,4 +156,4 @@ if [ "$failures" -gt 0 ]; then
   exit 1
 fi
 
-echo "PDF check passed: $pdf has $pages page(s) (budget $max_pages), ${#text} characters extracted, all ${#headings[@]} section headings found"
+echo "PDF check passed: $pdf has $pages page(s) (budget $max_pages), title '$title' and author '$author', ${#text} characters extracted, all ${#headings[@]} section headings found"
